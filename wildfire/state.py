@@ -5,6 +5,8 @@ from typing import List, Tuple
 
 from numpy import arange
 
+from wildfire.obstacle import Obstacle
+
 
 class State:
 
@@ -53,7 +55,7 @@ class State:
 
         psi_increment = radians(15)
 
-        for v in [self.max_velocity]:#[-self.max_velocity, self.max_velocity]:
+        for v in [-self.max_velocity, self.max_velocity]:
             for psi in arange(-self.psi_max, self.psi_max, psi_increment):
                 state = self.forward_kinematics(v, psi, time_delta)
                 if state.x < 0 or state.x > 250 or state.y < 0 or state.y > 250:
@@ -96,6 +98,9 @@ class State:
 
     def distance_between(self, other: State) -> float:
         return sqrt((self.x-other.x)**2 + (self.y-other.y)**2)
+
+    def obstacle_distance(self, obstacle: Obstacle) -> float:
+        return sqrt((self.x-obstacle.xy[0])**2 + (self.y-obstacle.xy[1])**2)
     
     def connects(self, other: State, time_delta: float)-> State:
         distance = self.distance_between(other)

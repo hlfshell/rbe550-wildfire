@@ -1,10 +1,6 @@
-
-
-
-
-
-from math import floor
-from random import choice
+from math import floor, pi
+from random import choice, randint, random
+from secrets import randbits
 from typing import List, Tuple
 import pygame
 
@@ -17,8 +13,8 @@ BG_SPRITE = "./wildfire/images/grass.png"
 BG_SIZE = (685, 460)
 GOAL_PROXIMITY = 10.0
 IGNITE_PROXIMITY = 30.0
-SPREAD_SECONDS = 20.0
-IGNITE_SECONDS = 60.0
+SPREAD_SECONDS = 10.0
+IGNITE_SECONDS = 10.0
 
 
 class Game:
@@ -49,22 +45,46 @@ class Game:
         self.bg_sprite = pygame.image.load(BG_SPRITE).convert_alpha()
         self.bg_sprite = pygame.transform.scale(self.bg_sprite, BG_SIZE)
 
+        self.vehicle : Vehicle = None
         self.create_vehicle()
 
         self.render()
 
     def obstacle_percentage(self) -> float:
-        pass
+        w, h = self._display_surface.get_size()
+        total_pixels = w*h
+        obstacle_pixels = 0
+        for obstacle in self.obstacles:
+            obstacle_pixels += obstacle.pixel_count
+        
+        return obstacle_pixels / total_pixels
 
-    def add_random_obstacle(self):
-        pass
+    def obstacle_fill(self, percentage : float):
+        while True:
+            if self.obstacle_percentage() >= percentage:
+                self.obstacles.sort(key = lambda o: o.xy[1])
+                return
+            
+            x = randint(0, 250)
+            y = randint(0, 250)
+            self.obstacles.append(Obstacle((x, y), self.pixels_per_meter))
 
     def create_vehicle(self):
-        self.vehicle = Vehicle(State(
-            (100, 100),
-            0.0,
-            0.0
-        ), 5)
+        while self.vehicle is None:
+            x = randint(0, 250)
+            y = randint(0, 250)
+            theta = random() * pi
+            if randbits(1):
+                theta = -theta
+
+            vehicle = Vehicle(State(
+                (x, y),
+                theta,
+                0.0
+            ), self.pixels_per_meter)
+
+            if not self.collision_detection(vehicle):
+                self.vehicle = vehicle
 
     def generate_obstacles(self, fill_percentage : float):
         iterations = 0
@@ -109,10 +129,10 @@ class Game:
         if self.goal is None and self.vehicle.path is None:
             burning_obstacles = self.obstacles_by_state(BURNING)
             if len(burning_obstacles) > 0:
-                # TODO - don't do random, but shortest obstacle
-                chosen_obstacle : Obstacle = choice(burning_obstacles)
+                burning_obstacles.sort(key=lambda o: self.vehicle.state.obstacle_distance(o))
+                chosen_obstacle = burning_obstacles[0]
                 self.goal = chosen_obstacle.xy
-                planner_time_delta = 0.5
+                planner_time_delta = 0.25
             
                 planner = Planner(
                     self.vehicle.state,
@@ -125,7 +145,7 @@ class Game:
                 )
 
                 path = planner.search()
-                print("PATH FOUND", path)
+
                 self.vehicle.path = path
                 self.vehicle.path_time_delta = planner_time_delta
         
@@ -148,6 +168,13 @@ class Game:
             if len(extinguished_obstacles) > 0:
                 obstacle : Obstacle = choice(extinguished_obstacles)
                 obstacle.ignite()
+        
+        if self.vehicle.at_goal():
+            goal_obstacle = [o for o in self.obstacles if o.xy == self.goal][0]
+            goal_obstacle.extinguish()
+            self.goal = None
+            self.vehicle.reset_path()
+
         self.time += self.time_per_frame
 
     def loop(self):

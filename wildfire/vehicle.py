@@ -57,7 +57,18 @@ class Vehicle(pygame.sprite.Sprite):
                 return True
 
         return False
-    
+
+    def at_goal(self) -> bool:
+        if self.path is None:
+            return False
+        
+        return self.state == self.path[-1]
+
+    def reset_path(self):
+        self.path = None
+        self.path_time = 0.0
+        self.path_time_delta = 0.0
+
     def clone(self) -> Vehicle:
         state = self.state.clone()
         return Vehicle(state, self.pixels_per_meter)

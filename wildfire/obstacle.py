@@ -1,6 +1,5 @@
 from __future__ import annotations
 from math import sqrt
-from random import randint
 from secrets import randbits
 from typing import Tuple
 import pygame
@@ -34,8 +33,20 @@ class Obstacle():
         self.burning_for = 0.0
         self.last_neighbor_ignition = 0.0
 
+        self.pixel_count = self.get_obstacle_pixel_count()
+
         self.render()
     
+    def get_obstacle_pixel_count(self) -> int:
+        pixel_count = 0
+        w, h = self.sprite.get_size()
+        for x in range(0, w):
+            for y in range(0, h):
+                rgba = self.sprite.get_at((x, y))
+                if rgba.a == 255:
+                    pixel_count += 1
+        return pixel_count
+
     def render(self):
         if self.state == BURNING:
             self.surface = self.burning_sprite
