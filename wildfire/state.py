@@ -88,7 +88,11 @@ class State:
         )
 
     def transition_cost(self, to: State) -> float:
-        return self.distance_between(to)
+        distance = self.distance_between(to)
+        theta_difference = abs(self.theta - to.theta)
+        if theta_difference > pi:
+            theta_difference = (2*pi) - theta_difference
+        return distance + (4*theta_difference)
 
     def distance_between(self, other: State) -> float:
         return sqrt((self.x-other.x)**2 + (self.y-other.y)**2)

@@ -80,7 +80,7 @@ class Game:
 
     def render(self):
         # Draw background
-        pygame.Surface.fill(self._display_surface, (255, 255, 255))
+        pygame.Surface.fill(self._display_surface, (0, 0, 0))
         for w in range(0, 3):
             for h in range(0, 3):
                 w_center = (w * (BG_SIZE[0] - 20)) + floor(BG_SIZE[0]/2) - 10
@@ -99,7 +99,7 @@ class Game:
 
         pygame.display.update()
 
-    def collision_detection(self, vehicle) -> bool:
+    def collision_detection(self, vehicle : Vehicle) -> bool:
         for obstacle in self.obstacles:
             if vehicle.collision_check(obstacle):
                 return True
