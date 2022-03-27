@@ -1,4 +1,5 @@
 from random import randint
+from time import sleep
 from wildfire.game import Game
 from wildfire.obstacle import Obstacle
 
@@ -15,4 +16,6 @@ for i in range(0, 15):
 obstacles.sort(key = lambda x: x.xy[1])
 
 game.obstacles = obstacles
+game.render()
+sleep(5)
 game.loop()

@@ -99,9 +99,9 @@ class Game:
 
         pygame.display.update()
 
-    def collision_detection(self) -> bool:
+    def collision_detection(self, vehicle) -> bool:
         for obstacle in self.obstacles:
-            if self.vehicle.collision_check(obstacle):
+            if vehicle.collision_check(obstacle):
                 return True
         return False
 
@@ -110,22 +110,24 @@ class Game:
             burning_obstacles = self.obstacles_by_state(BURNING)
             if len(burning_obstacles) > 0:
                 # TODO - don't do random, but shortest obstacle
-                chosen_obstacle : Obstacle = choice(self.get_burning_obstacles)
+                chosen_obstacle : Obstacle = choice(burning_obstacles)
                 self.goal = chosen_obstacle.xy
+                planner_time_delta = 0.5
             
-            planner = Planner(
-                self.vehicle.state,
-                self.goal,
-                GOAL_PROXIMITY,
-                0.5,
-                self.collision_detection,
-                self._display_surface,
-                self.pixels_per_meter
-            )
+                planner = Planner(
+                    self.vehicle.state,
+                    self.goal,
+                    GOAL_PROXIMITY,
+                    planner_time_delta,
+                    self.collision_detection,
+                    self._display_surface,
+                    self.pixels_per_meter
+                )
 
-            path = planner.search()
-            print("PATH FOUND", path)
-            self.vehicle.path = path
+                path = planner.search()
+                print("PATH FOUND", path)
+                self.vehicle.path = path
+                self.vehicle.path_time_delta = planner_time_delta
         
         for obstacle in self.obstacles:
             obstacle.tick(self.time_per_frame)

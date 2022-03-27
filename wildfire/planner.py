@@ -11,7 +11,7 @@ from wildfire.state import State
 from wildfire.vehicle import Vehicle
 
 
-MAX_STEPS = 1_000
+MAX_STEPS = 50_000
 MAX_X = 1250
 MAX_Y = 1250
 
@@ -84,10 +84,6 @@ class Planner():
                 if self.start == current:
                     return path
 
-        if self.start == current:
-            current_cost = 0
-        else:
-            current_cost = self.costs[current]
         # Get each neighbor for the current State and queue
         # them. First, we get a list of potential neighbors
         # that are valid from the current state - this
@@ -111,25 +107,31 @@ class Planner():
             # need to retread over this ground
             if neighbor not in self.parents:
                 # Collisions detection
-                shadow = Vehicle(self.pixels_per_meter)
+                shadow = Vehicle(neighbor, self.pixels_per_meter)
                 if self.collision_detection(shadow):
                     continue
 
                 self.parents[neighbor] = current
 
                 # Calculate our costs
-                distance = self.goal_distance(neighbor)
-                heuristic_cost = 5 * distance
+                if self.start == current:
+                    current_cost = 0
+                else:
+                    current_cost = self.costs[current]
 
-                transition_cost = current.transition_cost(neighbor)
+                distance_to_goal = self.goal_distance(neighbor)
+                heuristic_cost = 10 * distance_to_goal
 
-                total_cost = transition_cost + heuristic_cost
+                node_cost = current_cost + current.transition_cost(neighbor)
+
+                total_cost = node_cost + heuristic_cost
+                self.costs[neighbor] = node_cost
 
                 self.queue.push(neighbor, total_cost)
     
             # Draw a dot for the current considered spot
             pos = (neighbor.x, neighbor.y)
-            (pos[0]*self.pixels_per_meter, pos[1]*self.pixels_per_meter)
+            pos = (pos[0]*self.pixels_per_meter, pos[1]*self.pixels_per_meter)
             self.display.fill((255, 255, 255), (pos, (2, 2)))
 
 

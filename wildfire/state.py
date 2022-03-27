@@ -42,11 +42,18 @@ class State:
         self.max_velocity = 12 # meters / sec
     
     def get_neighbors(self, time_delta: float) -> List[State]:
-        psi_increment = radians(10)
+        neighbors = []
+
+        psi_increment = radians(15)
 
         for v in [-self.max_velocity, self.max_velocity]:
             for psi in arange(-self.psi_max, self.psi_max, psi_increment):
-                self.forward_kinematics(v, psi, time_delta)
+                state = self.forward_kinematics(v, psi, time_delta)
+                if state.x < 0 or state.x > 250 or state.y < 0 or state.y > 250:
+                    continue
+                neighbors.append(state)
+
+        return neighbors
     
     def forward_kinematics(self, v: float, psi: float, time_delta: float) -> State:
         thetadot = (v/self.L) * tan(psi)
@@ -132,3 +139,20 @@ class State:
             ydot=self.ydot,
             thetadot=self.thetadot
         )
+    
+    def __eq__(self, other: State) -> bool:
+        if other is None:
+            return False
+        distance = self.distance_between(other)
+        theta_difference = abs(self.theta - other.theta)
+        if theta_difference > pi:
+            theta_difference = (2*pi) - theta_difference
+        return distance < 0.5 and theta_difference < 0.1
+
+    def __hash__(self) -> int:
+        return hash((self.x, self.y, self.theta))
+
+    def __lt__(self, other: State) -> bool:
+        return \
+            (self.x, self.y, self.theta) < \
+            (other.x, other.y, other.theta)

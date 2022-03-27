@@ -15,7 +15,7 @@ class Obstacle():
     def __init__(self, xy : Tuple[float, float], pixels_per_meter : float):
         self.xy = xy
         self.pixels_per_meter = pixels_per_meter
-        sprite, burning_sprite = grab_random_tetrominoe()
+        sprite, burning_sprite = grab_random_tetrominoe(pixels_per_meter)
         self.sprite = sprite
         self.burning_sprite = burning_sprite
 
