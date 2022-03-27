@@ -21,6 +21,13 @@ class State:
         self.x = xy[0]
         self.y = xy[1]
         self.theta = theta
+
+        self.theta = self.theta % (2*pi)
+        if self.theta > pi:
+            self.theta = -1*((2*pi) - self.theta)
+        elif self.theta < pi:
+            self.theta = (2*pi) + self.theta
+
         self.psi = psi
         if not exact:
             self.x = round(self.x, 1)
@@ -46,7 +53,7 @@ class State:
 
         psi_increment = radians(15)
 
-        for v in [-self.max_velocity, self.max_velocity]:
+        for v in [self.max_velocity]:#[-self.max_velocity, self.max_velocity]:
             for psi in arange(-self.psi_max, self.psi_max, psi_increment):
                 state = self.forward_kinematics(v, psi, time_delta)
                 if state.x < 0 or state.x > 250 or state.y < 0 or state.y > 250:

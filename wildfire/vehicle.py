@@ -36,7 +36,7 @@ class Vehicle(pygame.sprite.Sprite):
         self.render()
 
     def render(self):
-        angle = -1*degrees(self.state.theta) - (pi/2)
+        angle = -1*degrees(self.state.theta + (pi/2))
         self.surface = pygame.transform.rotate(self.image, angle)
         xy = (self.state.x * self.pixels_per_meter, self.state.y * self.pixels_per_meter)
         self.rect = self.surface.get_rect(center=xy)
@@ -84,6 +84,11 @@ class Vehicle(pygame.sprite.Sprite):
         xdelta = state.xdot * time_delta
         ydelta = state.ydot * time_delta
         thetadelta = state.thetadot * time_delta
+
+        if thetadelta > pi:
+            thetadelta = -1*((2*pi) - thetadelta)
+        elif thetadelta < -pi:
+            thetadelta = (2*pi) + thetadelta
 
         x = self.state.x + xdelta
         y = self.state.y + ydelta
