@@ -1,9 +1,11 @@
 
 
 
-from math import sqrt
+from collections import defaultdict
+from math import degrees, sqrt
 from queue import PriorityQueue
 from typing import Callable, Dict, List, Optional, Tuple
+from numpy import arange
 
 import pygame
 
@@ -11,10 +13,9 @@ from wildfire.state import State
 from wildfire.vehicle import Vehicle
 
 
-MAX_STEPS = 1_000
+MAX_STEPS = 5_000
 MAX_X = 1250
 MAX_Y = 1250
-
 
 class Planner():
 
@@ -38,6 +39,13 @@ class Planner():
         self.display = display
         
         self.parents : Dict[State, State] = {}
+        self.exists = defaultdict(
+            lambda: defaultdict(
+                lambda: defaultdict(
+                    lambda: False
+                )
+        ))
+
         self.costs : Dict[State, float] = {}
         self.costs[self.start] = 0
         self.collision_detection = collision_detection
@@ -77,6 +85,8 @@ class Planner():
         # If our current state is our goal state, we've hit our
         # goal, we're done! Let's build the path...
         if self.goal_distance(current) < self.proximity:
+            if current == self.start:
+                return [current]
             path: List[State] = [current]
             while True:
                 current : State = self.parents[current]
@@ -105,13 +115,18 @@ class Planner():
 
             # If we have already reached this state, we don't
             # need to retread over this ground
-            if neighbor not in self.parents:
+            x = round(0.5 * round(neighbor.x/0.5),2)
+            y = round(0.5 * round(neighbor.y/0.5),2)
+            theta = round(degrees(10) * round(neighbor.theta/degrees(10)),2)
+            # if neighbor not in self.parents:
+            if not self.exists[x][y][theta]:
                 # Collisions detection
                 shadow = Vehicle(neighbor, self.pixels_per_meter)
                 if self.collision_detection(shadow):
                     continue
 
                 self.parents[neighbor] = current
+                self.exists[x][y][theta] = True
 
                 # Calculate our costs
                 if self.start == current:
@@ -133,7 +148,6 @@ class Planner():
             pos = (neighbor.x, neighbor.y)
             pos = (pos[0]*self.pixels_per_meter, pos[1]*self.pixels_per_meter)
             self.display.fill((255, 255, 255), (pos, (2, 2)))
-
 
 
 class AStar():

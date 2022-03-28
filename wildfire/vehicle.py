@@ -45,6 +45,24 @@ class Vehicle(pygame.sprite.Sprite):
     def blit(self, surface : pygame.Surface):
         surface.blit(self.surface, self.rect)
     
+    def draw_path(self, surface : pygame.Surface):
+        if self.path is None:
+            return
+
+        color = (255, 0, 0, 128)
+        drawn = self.path.copy()
+        first = drawn.pop(0)
+        second  = drawn.pop(0)
+        while True:
+            firstxy = (first.x*self.pixels_per_meter, first.y*self.pixels_per_meter)
+            secondxy = (second.x*self.pixels_per_meter, second.y*self.pixels_per_meter)
+            pygame.draw.line(surface, color, firstxy, secondxy, width=3)
+            first = second
+            if len(drawn) == 0:
+                break
+            second = drawn.pop(0)
+        pygame.display.update()
+
     def collision_check(self, obstacle : Obstacle):
         # First we test the rects - if they overlap,
         # we can then spend the time doing a finer degree

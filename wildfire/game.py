@@ -13,8 +13,8 @@ BG_SPRITE = "./wildfire/images/grass.png"
 BG_SIZE = (685, 460)
 GOAL_PROXIMITY = 10.0
 IGNITE_PROXIMITY = 30.0
-SPREAD_SECONDS = 10.0
-IGNITE_SECONDS = 10.0
+SPREAD_SECONDS = 60.0
+IGNITE_SECONDS = 20.0
 
 
 class Game:
@@ -115,6 +115,7 @@ class Game:
             self._display_surface.blit(obstacle.surface, obstacle.rect)
         
         if self.vehicle is not None:
+            self.vehicle.draw_path(self._display_surface)
             self.vehicle.render()
             self.vehicle.blit(self._display_surface)
 
@@ -129,16 +130,20 @@ class Game:
     def tick(self):
         if self.goal is None and self.vehicle.path is None:
             burning_obstacles = self.obstacles_by_state(BURNING)
+            burning_obstacles = [
+                    o for o \
+                        in burning_obstacles \
+                        if o not in self.unreachable_obstacles
+                ]
             if len(burning_obstacles) > 0:
                 burning_obstacles.sort(
-                    key=lambda o: self.vehicle.state.obstacle_distance(o) and \
-                        o not in self.unreachable_obstacles
+                    key=lambda o: self.vehicle.state.obstacle_distance(o)
                 )
                 chosen_obstacle = burning_obstacles[0]
                 self.goal = chosen_obstacle.xy
                 planner_time_delta = 0.25
             
-                planner = Planner(
+                self.planner = Planner(
                     self.vehicle.state,
                     self.goal,
                     GOAL_PROXIMITY,
@@ -149,11 +154,12 @@ class Game:
                 )
 
                 try:
-                    path = planner.search()
+                    path = self.planner.search()
                     self.unreachable_obstacles = []
                     self.vehicle.path = path
                     self.vehicle.path_time_delta = planner_time_delta
                 except Exception as e:
+                    # raise e
                     print("Could not solve path")
                     self.goal = None
                     self.unreachable_obstacles.append(chosen_obstacle)

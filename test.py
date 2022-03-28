@@ -6,7 +6,7 @@ from wildfire.obstacle import Obstacle
 game = Game(
     (1250, 1250),
     5,
-    time_per_second = 1.0
+    time_per_second = 20.0
 )
 
 # obstacles = []
