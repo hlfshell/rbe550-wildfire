@@ -32,6 +32,7 @@ class Game:
         self._fps = 60
 
         self.obstacles : List[Obstacle] = []
+        self.unreachable_obstacles : List[Obstacle] = []
         self.goal = None
 
         self.time_per_frame = time_per_second / self._fps
@@ -129,7 +130,10 @@ class Game:
         if self.goal is None and self.vehicle.path is None:
             burning_obstacles = self.obstacles_by_state(BURNING)
             if len(burning_obstacles) > 0:
-                burning_obstacles.sort(key=lambda o: self.vehicle.state.obstacle_distance(o))
+                burning_obstacles.sort(
+                    key=lambda o: self.vehicle.state.obstacle_distance(o) and \
+                        o not in self.unreachable_obstacles
+                )
                 chosen_obstacle = burning_obstacles[0]
                 self.goal = chosen_obstacle.xy
                 planner_time_delta = 0.25
@@ -144,10 +148,15 @@ class Game:
                     self.pixels_per_meter
                 )
 
-                path = planner.search()
-
-                self.vehicle.path = path
-                self.vehicle.path_time_delta = planner_time_delta
+                try:
+                    path = planner.search()
+                    self.unreachable_obstacles = []
+                    self.vehicle.path = path
+                    self.vehicle.path_time_delta = planner_time_delta
+                except Exception as e:
+                    print("Could not solve path")
+                    self.goal = None
+                    self.unreachable_obstacles.append(chosen_obstacle)
         
         for obstacle in self.obstacles:
             obstacle.tick(self.time_per_frame)

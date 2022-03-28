@@ -11,7 +11,7 @@ from wildfire.state import State
 from wildfire.vehicle import Vehicle
 
 
-MAX_STEPS = 50_000
+MAX_STEPS = 1_000
 MAX_X = 1250
 MAX_Y = 1250
 
