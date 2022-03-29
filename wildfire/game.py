@@ -6,6 +6,7 @@ import pygame
 
 from wildfire.obstacle import BURNING, EXTINGUISHED, Obstacle
 from wildfire.planner import Planner
+from wildfire.prm import PRM
 from wildfire.state import State
 from wildfire.vehicle import Vehicle
 
@@ -48,6 +49,8 @@ class Game:
 
         self.vehicle : Vehicle = None
         self.create_vehicle()
+
+        self.map : PRM = None
 
         self.render()
 
@@ -99,6 +102,17 @@ class Game:
             except:
                 continue
 
+    def generate_map(self):
+        self.map = PRM(
+            (250, 250),
+            10_000,
+            self.collision_detection,
+            self.pixels_per_meter
+        )
+        print("Creating Probablistic Road Map")
+        self.map.generate()
+        print("Map created")
+
     def render(self):
         # Draw background
         pygame.Surface.fill(self._display_surface, (0, 0, 0))
@@ -114,6 +128,9 @@ class Game:
             obstacle.render()
             self._display_surface.blit(obstacle.surface, obstacle.rect)
         
+        if self.map is not None:
+            self.map.render(self._display_surface)
+
         if self.vehicle is not None:
             self.vehicle.draw_path(self._display_surface)
             self.vehicle.render()

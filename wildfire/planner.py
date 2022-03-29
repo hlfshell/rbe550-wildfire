@@ -8,6 +8,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 from numpy import arange
 
 import pygame
+from wildfire.prm import PRM
 
 from wildfire.state import State
 from wildfire.vehicle import Vehicle
@@ -49,7 +50,7 @@ class Planner():
         self.costs : Dict[State, float] = {}
         self.costs[self.start] = 0
         self.collision_detection = collision_detection
-    
+
     def goal_distance(self, state : State) -> float:
         return sqrt(
             (state.x - self.goal[0])**2 +
