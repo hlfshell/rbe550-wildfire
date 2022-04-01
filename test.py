@@ -19,6 +19,6 @@ game = Game(
 # game.obstacles = obstacles
 game.obstacle_fill(0.2)
 game.render()
-sleep(5)
+# sleep(5)
 game.generate_map()
 game.loop()

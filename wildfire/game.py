@@ -1,11 +1,12 @@
 from math import floor, pi
 from random import choice, randint, random
 from secrets import randbits
+from time import sleep
 from typing import List, Tuple
 import pygame
 
 from wildfire.obstacle import BURNING, EXTINGUISHED, Obstacle
-from wildfire.planner import Planner
+from wildfire.planner import PRMAStarPlanner, AStarPlanner
 from wildfire.prm import PRM
 from wildfire.state import State
 from wildfire.vehicle import Vehicle
@@ -40,6 +41,8 @@ class Game:
 
         self.time = 0.0
         self.last_ignite = 0.0
+
+        self.prm_path : List[Tuple[float, float]] = None
         
         self._display_surface = pygame.display.set_mode(self.window_size)
         pygame.display.set_caption("Wildfire")
@@ -48,10 +51,11 @@ class Game:
         self.bg_sprite = pygame.transform.scale(self.bg_sprite, BG_SIZE)
 
         self.vehicle : Vehicle = None
-        self.create_vehicle()
 
         self.map : PRM = None
 
+        self.render()
+        self.create_vehicle()
         self.render()
 
     def obstacle_percentage(self) -> float:
@@ -131,6 +135,9 @@ class Game:
         if self.map is not None:
             self.map.render(self._display_surface)
 
+            if self.prm_path is not None:
+                self.draw_prm_path()
+
         if self.vehicle is not None:
             self.vehicle.draw_path(self._display_surface)
             self.vehicle.render()
@@ -158,28 +165,8 @@ class Game:
                 )
                 chosen_obstacle = burning_obstacles[0]
                 self.goal = chosen_obstacle.xy
-                planner_time_delta = 0.25
-            
-                self.planner = Planner(
-                    self.vehicle.state,
-                    self.goal,
-                    GOAL_PROXIMITY,
-                    planner_time_delta,
-                    self.collision_detection,
-                    self._display_surface,
-                    self.pixels_per_meter
-                )
 
-                try:
-                    path = self.planner.search()
-                    self.unreachable_obstacles = []
-                    self.vehicle.path = path
-                    self.vehicle.path_time_delta = planner_time_delta
-                except Exception as e:
-                    # raise e
-                    print("Could not solve path")
-                    self.goal = None
-                    self.unreachable_obstacles.append(chosen_obstacle)
+                self.plan()
         
         for obstacle in self.obstacles:
             obstacle.tick(self.time_per_frame)
@@ -206,6 +193,7 @@ class Game:
             goal_obstacle.extinguish()
             self.goal = None
             self.vehicle.reset_path()
+            self.prm_path = None
 
         self.time += self.time_per_frame
 
@@ -219,13 +207,137 @@ class Game:
             self._frame_per_sec.tick(self._fps)
 
     def plan(self):
-        pass
+        if self.map is not None:
+            self.prm_plan()
+        else:
+            self.astar_plan()
+    
+    def prm_plan(self):
+        # Get the closest node to the vehicle
+        start = self.map.get_nodes_nearest(
+            (self.vehicle.state.x, self.vehicle.state.y),
+            1
+        )[0]
+        goal = self.map.get_nodes_nearest(
+            self.goal,
+            1
+        )[0]
 
-    def animate_path(self, path: List[State]):
-        pass
+        try:
+            self.planner = PRMAStarPlanner(
+                start,
+                goal,
+                self.map,
+                self._display_surface,
+                self.pixels_per_meter
+            )
+            self.prm_path = self.planner.search()
+        except Exception as e:
+            print("Could not solve path - prm")
+            print(e)
+            self.unreachable_obstacles.append(self.goal)
+            self.goal = None
+            return
+
+        self.draw_prm_path()
+
+        prm_path = self.prm_path.copy()
+        current_node = prm_path.pop(0)
+        current_vehicle_state = self.vehicle.state
+        planner_time_delta = 0.25
+        self.vehicle.path = []
+        self.vehicle.path_time_delta = planner_time_delta
+        while len(prm_path) > 0:
+            self.planner = AStarPlanner(
+                current_vehicle_state,
+                current_node,
+                2.0,
+                planner_time_delta,
+                self.collision_detection,
+                self._display_surface,
+                self.pixels_per_meter
+            )
+
+            try:
+                path = self.planner.search()
+                self.unreachable_obstacles = []
+                if len(path) <= 1:
+                    current_node = prm_path.pop(0)
+                    continue
+
+                self.vehicle.path += path[1:]
+                print("path found", len(self.vehicle.path), len(path))
+                current_vehicle_state = path[-1]
+                print(path, self.vehicle.path)
+                current_node = prm_path.pop(0)
+            except Exception as e:
+                print("Could not solve path - astar")
+                print(e)
+                self.unreachable_obstacles.append(self.goal)
+                self.goal = None
+                self.vehicle.path = None
+                return
+        
+        print("Path found", len(self.vehicle.path))
+
+    def astar_plan(self):
+        planner_time_delta = 0.25
+        self.planner = AStarPlanner(
+            self.vehicle.state,
+            self.goal,
+            GOAL_PROXIMITY,
+            planner_time_delta,
+            self.collision_detection,
+            self._display_surface,
+            self.pixels_per_meter
+        )
+
+        try:
+            path = self.planner.search()
+            self.unreachable_obstacles = []
+            self.vehicle.path = path
+            self.vehicle.path_time_delta = planner_time_delta
+        except Exception as e:
+            print("Could not solve path")
+            print(e)
+            self.unreachable_obstacles.append(self.goal)
+            self.goal = None
 
     def draw_path(self, path: List[State]):
-        pass
+        if self.path is None:
+            return
+
+        color = (255, 0, 0, 128)
+        drawn = self.path.copy()
+        first = drawn.pop(0)
+        second  = drawn.pop(0)
+        while True:
+            firstxy = (first[0]*self.pixels_per_meter, first[1]*self.pixels_per_meter)
+            secondxy = (second[0]*self.pixels_per_meter, second[1]*self.pixels_per_meter)
+            pygame.draw.line(self._display_surface, color, firstxy, secondxy, width=3)
+            first = second
+            if len(drawn) == 0:
+                break
+            second = drawn.pop(0)
+        pygame.display.update()
+
+    def draw_prm_path(self):
+        if self.prm_path is None:
+            return
+
+        color = (0, 0,255, 128)
+        drawn = self.prm_path.copy()
+        first = drawn.pop(0)
+        second  = drawn.pop(0)
+        while True:
+            firstxy = (first[0]*self.pixels_per_meter, first[1]*self.pixels_per_meter)
+            secondxy = (second[0]*self.pixels_per_meter, second[1]*self.pixels_per_meter)
+            pygame.draw.line(self._display_surface, color, firstxy, secondxy, width=3)
+            first = second
+            if len(drawn) == 0:
+                break
+            second = drawn.pop(0)
+        pygame.display.update()
 
     def obstacles_by_state(self, state: int):
         return [obstacle for obstacle in self.obstacles if obstacle.state == state]
