@@ -46,7 +46,7 @@ class Vehicle(pygame.sprite.Sprite):
         surface.blit(self.surface, self.rect)
     
     def draw_path(self, surface : pygame.Surface):
-        if self.path is None:
+        if self.path is None or len(self.path) < 2:
             return
 
         color = (255, 0, 0, 128)
@@ -98,16 +98,18 @@ class Vehicle(pygame.sprite.Sprite):
 
         self.path_time += time_delta
 
+        index_td = floor(self.path_time / self.path_time_delta)
+        index_ptd = floor(self.path_time / time_delta)
+        index = index_td if index_td > index_ptd else index_ptd
+
         # If we've reached our terminal state, just hold it
         if self.path_time >= self.path_time_delta * len(self.path):
             self.state = self.path[-1]
             return
 
-        index_td = floor(self.path_time / self.path_time_delta)
-        index_ptd = floor(self.path_time / time_delta)
-        index = index_td if index_td > index_ptd else index_ptd
         if index >= len(self.path):
-            index = len(self.path) - 1
+            self.state = self.path[-1]
+            return
 
         # This is the current state whose dots we'll take
         state = self.path[index]
@@ -134,3 +136,6 @@ class Vehicle(pygame.sprite.Sprite):
             ydot = state.ydot,
             thetadot = state.thetadot
         )
+
+        if self.path[-1].distance_between(self.state) < 0.5:
+            self.state = self.path[-1]

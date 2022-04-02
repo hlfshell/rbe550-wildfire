@@ -25,10 +25,10 @@ class State:
         self.theta = theta
 
         self.theta = self.theta % (2*pi)
-        if self.theta > pi:
-            self.theta = -1*((2*pi) - self.theta)
-        elif self.theta < pi:
-            self.theta = (2*pi) + self.theta
+        # if self.theta > pi:
+        #     self.theta = -1*((2*pi) - self.theta)
+        # elif self.theta < pi:
+        #     self.theta = (2*pi) + self.theta
 
         self.psi = psi
         if not exact:
@@ -36,7 +36,7 @@ class State:
             self.y = round(self.y, 1)
             self.theta = round(self.theta, 1)
             self.psi = round(self.psi, 1)
-        self.theta = self.theta % (2*pi)
+        self.theta =self.theta % (2*pi) 
         self.psi = self.psi  % (2*pi)
 
         self.xdot = xdot
@@ -160,7 +160,9 @@ class State:
         if other is None:
             return False
         distance = self.distance_between(other)
-        theta_difference = abs(self.theta - other.theta)
+        stheta = self.theta % (2*pi)
+        otheta = other.theta % (2*pi)
+        theta_difference = abs(stheta - otheta)
         if theta_difference > pi:
             theta_difference = (2*pi) - theta_difference
         return distance < 0.5 and theta_difference < 0.1
