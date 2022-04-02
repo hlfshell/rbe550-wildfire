@@ -1,8 +1,9 @@
-from math import floor, pi
+import csv
+from math import floor, pi, sqrt
 import math
 from random import choice, randint, random
 from secrets import randbits
-from time import sleep
+from time import sleep, time_ns
 from typing import List, Tuple
 import pygame
 
@@ -16,8 +17,9 @@ BG_SPRITE = "./wildfire/images/grass.png"
 BG_SIZE = (685, 460)
 GOAL_PROXIMITY = 10.0
 IGNITE_PROXIMITY = 30.0
-SPREAD_SECONDS = 60.0
-IGNITE_SECONDS = 20.0
+SPREAD_SECONDS = 20.0
+IGNITE_SECONDS = 60.0
+MAX_TIME = 60 * 60
 
 
 class Game:
@@ -54,6 +56,13 @@ class Game:
         self.vehicle : Vehicle = None
 
         self.map : PRM = None
+
+        # Stats
+        self.time_steps: Tuple[float] = []
+        self.fire_percentage : Tuple[float] = []
+        self.time_to_path : Tuple[float] = []
+        self.distance_to_goal : Tuple[float] = []
+
 
         self.render()
 
@@ -156,7 +165,7 @@ class Game:
             burning_obstacles = [
                     o for o \
                         in burning_obstacles \
-                        if o not in self.unreachable_obstacles
+                        if o.xy not in self.unreachable_obstacles
                 ]
             if len(burning_obstacles) > 0:
                 burning_obstacles.sort(
@@ -196,6 +205,11 @@ class Game:
 
         self.time += self.time_per_frame
 
+        self.time_steps.append(self.time)
+        self.fire_percentage.append(
+            len(self.obstacles_by_state(BURNING)) / len(self.obstacles)
+        )
+
     def loop(self):
         self.last_ignite = 0.0
 
@@ -204,12 +218,24 @@ class Game:
             self.tick()
             pygame.event.get() # To prevent feezing, get input events
             self._frame_per_sec.tick(self._fps)
+            if self.time >= MAX_TIME:
+                self.end()
+                return
 
     def plan(self):
+        start_time = time_ns()
         if self.map is not None:
             self.prm_plan()
         else:
             self.astar_plan()
+        end_time = time_ns()    
+        if self.vehicle.path is not None:
+            self.time_to_path.append(end_time - start_time)
+            distance = sqrt(
+                (self.vehicle.state.x - self.goal[0])**2 +
+                (self.vehicle.state.y - self.goal[1])**2
+            )
+            self.distance_to_goal.append(distance)
     
     def prm_plan(self):
         # Get the closest node to the vehicle
@@ -344,35 +370,11 @@ class Game:
             if obstacle.distance_between(other) <= range
         ]
     
-    def drive(self):
-        while True:
-            rotation = 0
-            translation = 0
-            xdelta = 0
-            ydelta = 0
-            for event in pygame.event.get():
-                pressed_keys = pygame.key.get_pressed()
-                if pressed_keys[pygame.K_a]:
-                    rotation = pi * 0.125
-                elif pressed_keys[pygame.K_d]:
-                    rotation = -pi *0.125
-                
-                if pressed_keys[pygame.K_w]:
-                    translation = 1
-                elif pressed_keys[pygame.K_s]:
-                    translation = -1
-                    
-                thetadelta = rotation
-                theta = self.vehicle.state.theta + thetadelta
-                xdelta = translation*math.cos(theta)
-                ydelta = translation*math.sin(theta)
-
-            state = self.vehicle.state.clone()
-            state.x += xdelta
-            state.y += ydelta
-            state.theta += thetadelta
-            self.vehicle.state = state
-
-            self.render()
-            pygame.display.update()
-            self._frame_per_sec.tick(self._fps)
+    def end(self):
+        with open("./run_fires.csv", "w") as f:
+            writer = csv.writer(f)
+            writer.writerows(zip(self.time_steps, self.fire_percentage))
+        with open("./paths.csv", "w") as f:
+            writer = csv.writer(f)
+            writer.writerows(zip(self.time_to_path, self.distance_to_goal))
+        print("Finished!")
