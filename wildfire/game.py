@@ -1,4 +1,5 @@
 from math import floor, pi
+import math
 from random import choice, randint, random
 from secrets import randbits
 from time import sleep
@@ -54,8 +55,6 @@ class Game:
 
         self.map : PRM = None
 
-        self.render()
-        self.create_vehicle()
         self.render()
 
     def obstacle_percentage(self) -> float:
@@ -266,9 +265,8 @@ class Game:
                     continue
 
                 self.vehicle.path += path[1:]
-                print("path found", len(self.vehicle.path), len(path))
                 current_vehicle_state = path[-1]
-                print(path, self.vehicle.path)
+
                 current_node = prm_path.pop(0)
             except Exception as e:
                 print("Could not solve path - astar")
@@ -277,8 +275,6 @@ class Game:
                 self.goal = None
                 self.vehicle.path = None
                 return
-        
-        print("Path found", len(self.vehicle.path))
 
     def astar_plan(self):
         planner_time_delta = 0.25
@@ -347,3 +343,36 @@ class Game:
             other for other in self.obstacles
             if obstacle.distance_between(other) <= range
         ]
+    
+    def drive(self):
+        while True:
+            rotation = 0
+            translation = 0
+            xdelta = 0
+            ydelta = 0
+            for event in pygame.event.get():
+                pressed_keys = pygame.key.get_pressed()
+                if pressed_keys[pygame.K_a]:
+                    rotation = pi * 0.125
+                elif pressed_keys[pygame.K_d]:
+                    rotation = -pi *0.125
+                
+                if pressed_keys[pygame.K_w]:
+                    translation = 1
+                elif pressed_keys[pygame.K_s]:
+                    translation = -1
+                    
+                thetadelta = rotation
+                theta = self.vehicle.state.theta + thetadelta
+                xdelta = translation*math.cos(theta)
+                ydelta = translation*math.sin(theta)
+
+            state = self.vehicle.state.clone()
+            state.x += xdelta
+            state.y += ydelta
+            state.theta += thetadelta
+            self.vehicle.state = state
+
+            self.render()
+            pygame.display.update()
+            self._frame_per_sec.tick(self._fps)

@@ -47,7 +47,7 @@ class PRM():
         self.nodes = nodes
         self.kdtree = KDTree(nodes)
 
-    def get_nodes_within_range(self, xy: Tuple[float, float], proximity : float, count = None):
+    def get_nodes_within_range(self, xy: Tuple[float, float], proximity: float, count: int= None):
         indexes, _ = self.kdtree.query_radius(
             [xy],
             r=proximity,

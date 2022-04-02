@@ -103,7 +103,9 @@ class Vehicle(pygame.sprite.Sprite):
             self.state = self.path[-1]
             return
 
-        index = floor(self.path_time / self.path_time_delta)
+        index_td = floor(self.path_time / self.path_time_delta)
+        index_ptd = floor(self.path_time / time_delta)
+        index = index_td if index_td > index_ptd else index_ptd
         if index >= len(self.path):
             index = len(self.path) - 1
 
@@ -119,9 +121,9 @@ class Vehicle(pygame.sprite.Sprite):
         elif thetadelta < -pi:
             thetadelta = (2*pi) + thetadelta
 
-        x = self.state.x + xdelta
-        y = self.state.y + ydelta
-        theta = self.state.theta + thetadelta
+        x = state.x + xdelta
+        y = state.y + ydelta
+        theta = state.theta + thetadelta
 
         self.state = State(
             (x, y),
