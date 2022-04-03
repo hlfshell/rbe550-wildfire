@@ -80,6 +80,9 @@ class Vehicle(pygame.sprite.Sprite):
         if self.path is None:
             return False
         
+        if len(self.path) == 0:
+            return True
+        
         return self.state == self.path[-1]
 
     def reset_path(self):
@@ -93,7 +96,7 @@ class Vehicle(pygame.sprite.Sprite):
     
     def tick(self, time_delta : float):
 
-        if self.path is None:
+        if self.path is None or len(self.path) == 0:
             return
 
         self.path_time += time_delta

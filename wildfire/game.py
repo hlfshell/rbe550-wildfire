@@ -285,7 +285,7 @@ class Game:
 
             try:
                 path = self.planner.search()
-                self.unreachable_obstacles = []
+                # self.unreachable_obstacles = []
                 if len(path) <= 1:
                     current_node = prm_path.pop(0)
                     continue
@@ -316,7 +316,7 @@ class Game:
 
         try:
             path = self.planner.search()
-            self.unreachable_obstacles = []
+            # self.unreachable_obstacles = []
             self.vehicle.path = path
             self.vehicle.path_time_delta = planner_time_delta
         except Exception as e:
@@ -370,11 +370,21 @@ class Game:
             if obstacle.distance_between(other) <= range
         ]
     
+    def reset(self):
+        self.time = 0.0
+        for obstacle in self.obstacles:
+            obstacle.extinguish()
+
+        self.vehicle.path = None
+        self.prm_path = None
+        self.vehicle.path_time = 0.0
+
     def end(self):
-        with open("./run_fires.csv", "w") as f:
+        plan_type = "astar" if self.map is None else "prm"
+        with open(f"./fires_{plan_type}.csv", "w") as f:
             writer = csv.writer(f)
             writer.writerows(zip(self.time_steps, self.fire_percentage))
-        with open("./paths.csv", "w") as f:
+        with open(f"./paths_{plan_type}.csv", "w") as f:
             writer = csv.writer(f)
             writer.writerows(zip(self.time_to_path, self.distance_to_goal))
         print("Finished!")

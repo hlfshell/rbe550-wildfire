@@ -7,12 +7,12 @@ from wildfire.prm import PRM
 game = Game(
     (1250, 1250),
     5,
-    time_per_second = 1.0
+    time_per_second = 5.0
 )
 
 game.obstacle_fill(0.2)
 game.create_vehicle()
 game.render()
-# game.generate_map()
+game.generate_map()
 
 game.loop()

@@ -48,7 +48,7 @@ class State:
         self.length = 7 #meters
         self.L = 2.8 # wheelbase, meter
         self.psi_max = radians(60)
-        self.max_velocity = 12 # meters / sec
+        self.max_velocity = 10 # meters / sec
     
     def get_neighbors(self, time_delta: float) -> List[State]:
         neighbors = []
