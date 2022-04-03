@@ -1,5 +1,3 @@
-from random import randint
-from time import sleep
 from wildfire.game import Game
 
 game = Game(
