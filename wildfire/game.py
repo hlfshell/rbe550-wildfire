@@ -58,10 +58,11 @@ class Game:
         self.map : PRM = None
 
         # Stats
-        self.time_steps: Tuple[float] = []
-        self.fire_percentage : Tuple[float] = []
-        self.time_to_path : Tuple[float] = []
-        self.distance_to_goal : Tuple[float] = []
+        self.time_steps: List[float] = []
+        self.fire_percentage : List[float] = []
+        self.time_to_path : List[float] = []
+        self.distance_to_goal : List[float] = []
+        self.intact : List[float] = []
 
 
         self.render()
@@ -209,6 +210,9 @@ class Game:
         self.fire_percentage.append(
             len(self.obstacles_by_state(BURNING)) / len(self.obstacles)
         )
+        self.intact.append(
+            len(self.obstacles_intact()) / len(self.obstacles)
+        )
 
     def loop(self):
         self.last_ignite = 0.0
@@ -346,6 +350,8 @@ class Game:
     def draw_prm_path(self):
         if self.prm_path is None:
             return
+        if len(self.prm_path) <= 1:
+            return
 
         color = (0, 0,255, 128)
         drawn = self.prm_path.copy()
@@ -370,20 +376,32 @@ class Game:
             if obstacle.distance_between(other) <= range
         ]
     
+    def obstacles_intact(self):
+        return [obstacle for obstacle in self.obstacles if not obstacle.has_burned]
+
     def reset(self):
         self.time = 0.0
         for obstacle in self.obstacles:
-            obstacle.extinguish()
+            obstacle.reset()
 
         self.vehicle.path = None
         self.prm_path = None
         self.vehicle.path_time = 0.0
+
+        self.time_steps = []
+        self.fire_percentage = []
+        self.time_to_path = []
+        self.distance_to_goal = []
+        self.intact = []
 
     def end(self):
         plan_type = "astar" if self.map is None else "prm"
         with open(f"./fires_{plan_type}.csv", "w") as f:
             writer = csv.writer(f)
             writer.writerows(zip(self.time_steps, self.fire_percentage))
+        with open(f"./intact_{plan_type}.csv", "w") as f:
+            writer = csv.writer(f)
+            writer.writerows(zip(self.time_steps, self.intact))
         with open(f"./paths_{plan_type}.csv", "w") as f:
             writer = csv.writer(f)
             writer.writerows(zip(self.time_to_path, self.distance_to_goal))
