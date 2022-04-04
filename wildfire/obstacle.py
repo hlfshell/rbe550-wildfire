@@ -32,6 +32,7 @@ class Obstacle():
         self.state = EXTINGUISHED
         self.burning_for = 0.0
         self.last_neighbor_ignition = 0.0
+        self.has_burned = False
 
         self.pixel_count = self.get_obstacle_pixel_count()
 
@@ -63,11 +64,16 @@ class Obstacle():
         self.state = BURNING
         self.burning_for = 0.0
         self.last_neighbor_ignition = 0.0
+        self.has_burned = True
     
     def extinguish(self):
         self.state = EXTINGUISHED
         self.burning_for = 0.0
         self.last_neighbor_ignition = 0.0
+    
+    def reset(self):
+        self.extinguish
+        self.has_burned = False
 
     def distance_between(self, other: Obstacle) -> float:
         return sqrt(
