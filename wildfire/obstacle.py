@@ -72,7 +72,7 @@ class Obstacle():
         self.last_neighbor_ignition = 0.0
     
     def reset(self):
-        self.extinguish
+        self.extinguish()
         self.has_burned = False
 
     def distance_between(self, other: Obstacle) -> float:
