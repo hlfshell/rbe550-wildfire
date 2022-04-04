@@ -62,7 +62,7 @@ plt.savefig("./plots/prm_paths.jpg")
 
 ## FIRE AND INTACT
 plt.figure("astar_fires")
-plt.title("A* Obstacle Health Over Time")
+plt.title("A* Obstacle Burning Percentage over Time")
 plt.xlabel("Time")
 plt.ylabel("Percentage of Obstacles Burning")
 for run in range(1, 5+1):
@@ -90,7 +90,7 @@ plt.savefig("./plots/astar_obstacles_intact.jpg")
 
 # PRM
 plt.figure("prm_fires")
-plt.title("PRM + A* Obstacle Health Over Time")
+plt.title("PRM + A* Obstacle Burning Percentage over Time")
 plt.xlabel("Time")
 plt.ylabel("Percentage of Obstacles Burning")
 for run in range(1, 5+1):
